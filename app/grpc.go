@@ -9,11 +9,7 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/liangguifeng/kratos-app"
-	"github.com/liangguifeng/kratos-app/internal/config"
-	"github.com/liangguifeng/kratos-app/internal/setup"
-	"github.com/nacos-group/nacos-sdk-go/clients"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/liangguifeng/kratos-app/internal/module/helper"
 	"os"
 )
 
@@ -48,7 +44,6 @@ func (r *Runner) handleGRPC(grpcApp *kratos.GRPCApplication) error {
 	if err != nil {
 		return err
 	}
-
 	// 注册GRPC路由
 	err = grpcApp.RegisterGRPCServer(grpcSrv)
 	if err != nil {
@@ -68,19 +63,7 @@ func (r *Runner) handleGRPC(grpcApp *kratos.GRPCApplication) error {
 		"span_id", tracing.SpanID(),
 	)
 
-	client, err := clients.NewNamingClient(vo.NacosClientParam{
-		ClientConfig: &constant.ClientConfig{
-			NamespaceId:         config.GetNacosNamespaceId(),
-			TimeoutMs:           setup.NACOS_TIMEOU_MS,
-			NotLoadCacheAtStart: true,
-			LogDir:              setup.NACOS_LOG_DIR,
-			CacheDir:            setup.NACOS_CACHE_DIR,
-			LogLevel:            setup.NACOS_LOG_LEVEL,
-		},
-		ServerConfigs: []constant.ServerConfig{
-			*constant.NewServerConfig(config.GetNacosAddress(), config.GetNacosEndpoint()),
-		},
-	})
+	registerClient, err := helper.NewRegisterConn()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -91,11 +74,8 @@ func (r *Runner) handleGRPC(grpcApp *kratos.GRPCApplication) error {
 		server.Version(grpcApp.App.Version),
 		server.Metadata(map[string]string{}),
 		server.Logger(logger),
-		server.Server(
-			httpSrv,
-			grpcSrv,
-		),
-		server.Registrar(nacos.New(client)),
+		server.Server(httpSrv, grpcSrv),
+		server.Registrar(nacos.New(registerClient.GetClient())),
 	)
 
 	if err = kratosServer.Run(); err != nil {
