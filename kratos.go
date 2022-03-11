@@ -35,7 +35,9 @@ type CallbackPos int
 // Application ...
 type Application struct {
 	Name             string
-	Port             int64
+	HTTPPort         string
+	GRPCPort         string
+	Version          string
 	Type             int32
 	LoggerRootPath   string
 	LoadConfig       func() error

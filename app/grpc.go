@@ -31,13 +31,13 @@ func (r *Runner) ListenGRPCServer(grpcApp *kratos.GRPCApplication) error {
 // Run gRPC application handle.
 func (r *Runner) handleGRPC(grpcApp *kratos.GRPCApplication) error {
 	httpSrv := http.NewServer(
-		http.Address(":8000"),
+		http.Address(":"+grpcApp.App.HTTPPort),
 		http.Middleware(
 			recovery.Recovery(),
 		),
 	)
 	grpcSrv := grpc.NewServer(
-		grpc.Address(":9000"),
+		grpc.Address(":"+grpcApp.App.GRPCPort),
 		grpc.Middleware(
 			recovery.Recovery(),
 		),
@@ -55,16 +55,19 @@ func (r *Runner) handleGRPC(grpcApp *kratos.GRPCApplication) error {
 		return err
 	}
 
+	id, _ := os.Hostname()
+	serverId := id + grpcApp.App.Name + " _service"
 	logger := log.With(
 		log.NewStdLogger(os.Stdout),
 		"ts", log.DefaultTimestamp,
 		"caller", log.DefaultCaller,
-		"service.id", "2022_02_28_002849",
+		"service.id", serverId,
 		"service.name", grpcApp.App.Name,
-		"service.version", "1.0",
+		"service.version", grpcApp.App.Version,
 		"trace_id", tracing.TraceID(),
 		"span_id", tracing.SpanID(),
 	)
+
 	client, err := clients.NewNamingClient(vo.NacosClientParam{
 		ClientConfig: &constant.ClientConfig{
 			NamespaceId:         config.GetNacosNamespaceId(),
@@ -83,9 +86,9 @@ func (r *Runner) handleGRPC(grpcApp *kratos.GRPCApplication) error {
 	}
 
 	kratosServer := server.New(
-		server.ID("2022_02_28_002849"),
+		server.ID(serverId),
 		server.Name(grpcApp.App.Name),
-		server.Version("1.0"),
+		server.Version(grpcApp.App.Version),
 		server.Metadata(map[string]string{}),
 		server.Logger(logger),
 		server.Server(
