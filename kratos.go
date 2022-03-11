@@ -5,7 +5,6 @@ import (
 	grpc_server "github.com/go-kratos/kratos/v2/transport/grpc"
 	http_server "github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/gomodule/redigo/redis"
-	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 	"io"
@@ -120,13 +119,6 @@ type HTTPClientIface interface {
 	PostForm(ctx context.Context, url string, data url.Values) (*http.Response, error)
 	HttpHead(ctx context.Context, url string) (*http.Response, error)
 	HttpDo(ctx context.Context, r *http.Request) (*http.Response, error)
-}
-
-// RegisterClient
-var RegisterClient RegisterClientIface
-
-type RegisterClientIface interface {
-	GetClient() naming_client.INamingClient
 }
 
 // RunNewRunnerCallback
