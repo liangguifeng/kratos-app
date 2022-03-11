@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/goinggo/mapstructure"
@@ -215,4 +216,27 @@ func (c *Configer) LoadAppConfig(app *kratos.Application) error {
 	}
 
 	return nil
+}
+
+// WatchUpdateConfig 监听nacos配置
+func (c *Configer) WatchUpdateConfig() {
+	if len(WatchConfigFields) == 0 {
+		return
+	}
+
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				kratos.Logger.Errorf(context.Background(), "WatchUpdateConfig Recover err: %v", err)
+			}
+		}()
+
+		err := c.client.ListenConfig(vo.ConfigParam{
+			DataId: c.DataId,
+			Group:  NACOS_DEFAULT_GROUP,
+		})
+		if err != nil {
+			return
+		}
+	}()
 }

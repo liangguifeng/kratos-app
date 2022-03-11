@@ -18,6 +18,7 @@ type Runner struct {
 	App *kratos.Application
 }
 
+// NewRunner 运行项目准备
 func NewRunner(app *kratos.Application) (*Runner, error) {
 	if app.Name == "" {
 		return nil, errors.New("Application name can't not be empty")
@@ -39,7 +40,6 @@ func NewRunner(app *kratos.Application) (*Runner, error) {
 
 	// 日志组件初始化
 	var err error
-	// todo: liangguifeng 初始化日志
 	err = setup.NewLogGlobalConfig(app)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func NewRunner(app *kratos.Application) (*Runner, error) {
 		return nil, err
 	}
 
-	// 如果有需要手动设定全局变量的配置在此添加
+	// 加载nacos配置
 	if app.LoadConfig != nil {
 		// 加载手动声明的配置
 		err = app.LoadConfig()
@@ -71,6 +71,7 @@ func NewRunner(app *kratos.Application) (*Runner, error) {
 		}
 	}
 
+	// 设置全部变量
 	if app.SetupVars != nil {
 		err = app.SetupVars()
 		if err != nil {
@@ -82,8 +83,8 @@ func NewRunner(app *kratos.Application) (*Runner, error) {
 		}
 	}
 
-	// todo: liangguifeng 监听更新
-	//kratos.Configer.WatchUpdateConfig()
+	// 监听nacos更新
+	kratos.Configer.WatchUpdateConfig()
 
 	// 设置全局mysql连接池、redis连接池、http客户端
 	err = setup.NewGlobalVars()

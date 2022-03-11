@@ -7,11 +7,11 @@ import (
 
 // MapConfig 加载配置到结构体中
 func MapConfig(section string, v interface{}, isListenChange bool) error {
-	return mapApolloConfig(section, v, isListenChange)
+	return mapNacosConfig(section, v, isListenChange)
 }
 
-// mapApolloConfig
-func mapApolloConfig(section string, v interface{}, isListenChange bool) error {
+// mapNacosConfig
+func mapNacosConfig(section string, v interface{}, isListenChange bool) error {
 	var uniqueSectionDict = make(map[string]bool)
 	if _, ok := uniqueSectionDict[section]; ok {
 		return fmt.Errorf("repeate section config")
@@ -32,8 +32,8 @@ func mapApolloConfig(section string, v interface{}, isListenChange bool) error {
 	}
 
 	if isListenChange {
-		for apolloKeyName, field := range fields {
-			setup.WatchConfigFields[apolloKeyName] = field
+		for nacosKeyName, field := range fields {
+			setup.WatchConfigFields[nacosKeyName] = field
 		}
 	}
 

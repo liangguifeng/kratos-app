@@ -87,6 +87,7 @@ type ConfigerIface interface {
 	GetAllKeys() map[string]interface{}
 	GetIntValue(key string, defaultValue int) int
 	GetBoolValue(key string, defaultValue bool) bool
+	WatchUpdateConfig()
 }
 
 // DBConn is a global vars for mysql tracing connect.
