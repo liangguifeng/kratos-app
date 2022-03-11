@@ -1,28 +1,23 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strconv"
+)
 
 const (
-	// ElasticStack APM Server URL
-	ENV_APM_SERVER_URL = "ELASTIC_APM_SERVER_URL"
-	// ElasticStack APM Server URLs
-	ENV_APM_SERVER_URLS = "ELASTIC_APM_SERVER_URLS"
-	// Apollo META Server URL
-	ENV_APOLLO_META_SERVER_URL = "APOLLO_META_SERVER_URL"
-	// ETCD V3 Server URL
-	ENV_ETCDV3_SERVER_URL = "ETCDV3_SERVER_URL"
-	// ETCD V3 Server URLs
-	ENV_ETCDV3_SERVER_URLS = "ETCDV3_SERVER_URLS"
-	// TENANT_NAMESPACE
-	TENANT_NAMESPACE = "TENANT_NAMESPACE"
 	// GO_ENV
 	GO_ENV = "GO_ENV"
 	// PROJECT_ENV
 	PROJECT_ENV = "PROJECT_ENV"
 	// PROJECT_LOGGER_PATH
 	PROJECT_LOGGER_PATH = "PROJECT_LOGGER_PATH"
-	// APOLLO_ACCESSKEY_SECRET
-	APOLLO_ACCESSKEY_SECRET = "APOLLO_ACCESSKEY_SECRET"
+	// NACOS_ADDRESS
+	NACOS_ADDRESS = "NACOS_ADDRESS"
+	// NACOS_ENDPOINT
+	NACOS_ENDPOINT = "NACOS_ENDPOINT"
+	// NACOS_NAMESPACE_ID
+	NACOS_NAMESPACE_ID = "NACOS_NAMESPACE_ID"
 )
 
 // GetBuildEnv 获取当前环境
@@ -38,6 +33,35 @@ func GetBuildEnv() string {
 	}
 
 	return ""
+}
+
+// GetNacosAddress
+func GetNacosAddress() string {
+	value := os.Getenv(NACOS_ADDRESS)
+	if value != "" {
+		return value
+	}
+	return ""
+}
+
+// GetNacosNamespaceId
+func GetNacosNamespaceId() string {
+	value := os.Getenv(NACOS_NAMESPACE_ID)
+	if value != "" {
+		return value
+	}
+	return ""
+}
+
+// GetNacosEndpoint
+func GetNacosEndpoint() uint64 {
+	value := os.Getenv(NACOS_ENDPOINT)
+	if value != "" {
+		intNum, _ := strconv.Atoi(value)
+		int64Num := uint64(intNum)
+		return int64Num
+	}
+	return 0
 }
 
 // GetProjectLoggerPath 获取日志根目录
