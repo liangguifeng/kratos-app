@@ -2,8 +2,9 @@ package setup
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/goinggo/mapstructure"
 	kratos "github.com/liangguifeng/kratos-app"
-	config2 "github.com/liangguifeng/kratos-app/config"
 	"github.com/liangguifeng/kratos-app/config/setting"
 	"github.com/liangguifeng/kratos-app/internal/config"
 	"github.com/nacos-group/nacos-sdk-go/clients"
@@ -11,8 +12,11 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"log"
+	"reflect"
 	"strconv"
 )
+
+var WatchConfigFields = make(map[string]*Field)
 
 const (
 	NACOS_DEFAULT_GROUP = "DEFAULT_GROUP"
@@ -28,11 +32,18 @@ type Configer struct {
 	DataId           string
 }
 
+type Field struct {
+	Name         string
+	NacosKeyName string
+	Value        reflect.Value
+	Type         reflect.Type
+}
+
 // NewConfiger 获取nacos的client
 func NewConfiger(app *kratos.Application) (*Configer, error) {
 	client, err := clients.NewConfigClient(vo.NacosClientParam{
 		ClientConfig: &constant.ClientConfig{
-			NamespaceId:         config2.GetNacosNamespaceId(),
+			NamespaceId:         config.GetNacosNamespaceId(),
 			TimeoutMs:           NACOS_TIMEOU_MS,
 			NotLoadCacheAtStart: true,
 			LogDir:              NACOS_LOG_DIR,
@@ -40,7 +51,7 @@ func NewConfiger(app *kratos.Application) (*Configer, error) {
 			LogLevel:            NACOS_LOG_LEVEL,
 		},
 		ServerConfigs: []constant.ServerConfig{
-			*constant.NewServerConfig(config2.GetNacosAddress(), config2.GetNacosEndpoint()),
+			*constant.NewServerConfig(config.GetNacosAddress(), config.GetNacosEndpoint()),
 		},
 	})
 	if err != nil {
@@ -104,6 +115,72 @@ func (c *Configer) GetBoolValue(key string, defaultValue bool) bool {
 
 	vv, _ := strconv.ParseBool(value)
 	return vv
+}
+
+// GetReflectFields 从v获取反射字段。
+func GetReflectFields(section string, v interface{}) (map[string]*Field, error) {
+	typeOf := reflect.TypeOf(v)
+	valueOf := reflect.ValueOf(v)
+	if typeOf.Kind() == reflect.Ptr {
+		typeOf = typeOf.Elem()
+	}
+	if valueOf.Kind() == reflect.Ptr {
+		valueOf = valueOf.Elem()
+	}
+	if typeOf.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("Type must be a struct")
+	}
+
+	result := make(map[string]*Field)
+	fieldCnt := typeOf.NumField()
+	for i := 0; i < fieldCnt; i++ {
+		name := typeOf.Field(i).Name
+		nacosKeyName := fmt.Sprintf("%s.%s", section, name)
+		result[nacosKeyName] = &Field{
+			Name:         name,
+			NacosKeyName: nacosKeyName,
+			Type:         typeOf.Field(i).Type,
+			Value:        valueOf.Field(i),
+		}
+	}
+
+	return result, nil
+}
+
+func SaveWatchConfigField(v interface{}, fields map[string]*Field) error {
+	configValues := make(map[string]interface{})
+	for nacosKeyName, field := range fields {
+		var value interface{}
+		switch field.Type.Kind() {
+		case reflect.Int,
+			reflect.Int8,
+			reflect.Int16,
+			reflect.Int32,
+			reflect.Int64,
+			reflect.Uint,
+			reflect.Uint8,
+			reflect.Uint16,
+			reflect.Uint32,
+			reflect.Uint64:
+			value = kratos.Configer.GetIntValue(nacosKeyName, 0)
+		case reflect.String:
+			value = kratos.Configer.GetStringValue(nacosKeyName, "")
+		case reflect.Bool:
+			value = kratos.Configer.GetBoolValue(nacosKeyName, false)
+		default:
+			return fmt.Errorf("Current field type is not be supported")
+		}
+		configValues[field.Name] = value
+	}
+	if len(configValues) == 0 {
+		return nil
+	}
+
+	if err := mapstructure.Decode(configValues, v); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *Configer) LoadAppConfig(app *kratos.Application) error {

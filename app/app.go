@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/liangguifeng/kratos-app"
-	"github.com/liangguifeng/kratos-app/config"
+	config2 "github.com/liangguifeng/kratos-app/internal/config"
 	"github.com/liangguifeng/kratos-app/internal/setup"
 	"github.com/pkg/errors"
 )
@@ -32,9 +32,9 @@ func NewRunner(app *kratos.Application) (*Runner, error) {
 	app.LoggerRootPath = *loggerPath
 
 	// 获取当前环境变量
-	goEnv := config.GetBuildEnv()
+	goEnv := config2.GetBuildEnv()
 	if goEnv == "" {
-		return nil, fmt.Errorf("Can't not found env '%s' or '%s'", config.PROJECT_ENV, config.GO_ENV)
+		return nil, fmt.Errorf("Can't not found env '%s' or '%s'", config2.PROJECT_ENV, config2.GO_ENV)
 	}
 
 	// 日志组件初始化
@@ -66,6 +66,17 @@ func NewRunner(app *kratos.Application) (*Runner, error) {
 		}
 		// 执行回调
 		err = app.RunLoadConfigCallback()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if app.SetupVars != nil {
+		err = app.SetupVars()
+		if err != nil {
+			return nil, err
+		}
+		err = app.RunSetupVarsCallback()
 		if err != nil {
 			return nil, err
 		}

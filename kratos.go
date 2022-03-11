@@ -28,8 +28,6 @@ const (
 	POS_SETUP_VARS
 	// 调用 NewRunner 方法后
 	POS_NEW_RUNNER
-	// 调用 RegisterEventHandler 方法后
-	POS_REGISTER_EVENT_HANDLER
 )
 
 type CallbackPos int
@@ -45,6 +43,41 @@ type Application struct {
 	RegisterCallback map[CallbackPos]func() error
 }
 
+// GRPCApplication ...
+type GRPCApplication struct {
+	App                         *Application
+	GRPCServer                  *grpc_server.Server
+	HttpServer                  *http_server.Server
+	UnaryServerInterceptors     []grpc.UnaryServerInterceptor
+	ServerOptions               []grpc.ServerOption
+	RegisterGRPCServer          func(*grpc_server.Server) error
+	RegisterHttpRoute           func(*http_server.Server) error
+	RegisterGracefulStopHandler func()
+}
+
+// Logger is a global vars for writing to the log.
+var Logger LoggerIface
+
+type LoggerIface interface {
+	// 业务日志
+	Debug(ctx context.Context, args ...interface{})
+	Debugf(ctx context.Context, format string, args ...interface{})
+	Debugw(ctx context.Context, err error)
+	Info(ctx context.Context, args ...interface{})
+	Infof(ctx context.Context, format string, args ...interface{})
+	Infow(ctx context.Context, err error)
+
+	// 警告日志
+	Warn(ctx context.Context, args ...interface{})
+	Warnf(ctx context.Context, format string, args ...interface{})
+	Warnw(ctx context.Context, err error)
+
+	// 错误日志
+	Error(ctx context.Context, args ...interface{})
+	Errorf(ctx context.Context, format string, args ...interface{})
+	Errorw(ctx context.Context, err error)
+}
+
 // Configer is a global vars for read app config.
 var Configer ConfigerIface
 
@@ -54,22 +87,6 @@ type ConfigerIface interface {
 	GetAllKeys() map[string]interface{}
 	GetIntValue(key string, defaultValue int) int
 	GetBoolValue(key string, defaultValue bool) bool
-}
-
-func (app *Application) RunNewRunnerCallback() error {
-	if f, ok := app.RegisterCallback[POS_NEW_RUNNER]; ok {
-		return f()
-	}
-
-	return nil
-}
-
-func (app *Application) RunLoadConfigCallback() error {
-	if f, ok := app.RegisterCallback[POS_LOAD_CONFIG]; ok {
-		return f()
-	}
-
-	return nil
 }
 
 // DBConn is a global vars for mysql tracing connect.
@@ -101,14 +118,29 @@ type HTTPClientIface interface {
 	HttpDo(ctx context.Context, r *http.Request) (*http.Response, error)
 }
 
-// GRPCApplication ...
-type GRPCApplication struct {
-	App                         *Application
-	GRPCServer                  *grpc_server.Server
-	HttpServer                  *http_server.Server
-	UnaryServerInterceptors     []grpc.UnaryServerInterceptor
-	ServerOptions               []grpc.ServerOption
-	RegisterGRPCServer          func(*grpc_server.Server) error
-	RegisterHttpRoute           func(*http_server.Server) error
-	RegisterGracefulStopHandler func()
+// RunNewRunnerCallback
+func (app *Application) RunNewRunnerCallback() error {
+	if f, ok := app.RegisterCallback[POS_NEW_RUNNER]; ok {
+		return f()
+	}
+
+	return nil
+}
+
+// RunLoadConfigCallback
+func (app *Application) RunLoadConfigCallback() error {
+	if f, ok := app.RegisterCallback[POS_LOAD_CONFIG]; ok {
+		return f()
+	}
+
+	return nil
+}
+
+// RunSetupVarsCallback
+func (app *Application) RunSetupVarsCallback() error {
+	if f, ok := app.RegisterCallback[POS_SETUP_VARS]; ok {
+		return f()
+	}
+
+	return nil
 }

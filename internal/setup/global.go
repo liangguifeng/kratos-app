@@ -3,9 +3,10 @@ package setup
 import (
 	"fmt"
 	kratos "github.com/liangguifeng/kratos-app"
-	"github.com/liangguifeng/kratos-app/config"
 	"github.com/liangguifeng/kratos-app/config/setting"
+	config2 "github.com/liangguifeng/kratos-app/internal/config"
 	"github.com/liangguifeng/kratos-app/internal/module/helper"
+	"github.com/liangguifeng/kratos-app/logging/applog"
 	"os"
 	"runtime"
 )
@@ -18,15 +19,19 @@ func NewLogGlobalConfig(application *kratos.Application) error {
 	}
 	if application.LoggerRootPath != "" {
 		rootPath = application.LoggerRootPath
-	} else if projectLoggerPath := config.GetProjectLoggerPath(); projectLoggerPath != "" {
+	} else if projectLoggerPath := config2.GetProjectLoggerPath(); projectLoggerPath != "" {
 		rootPath = projectLoggerPath
 	}
-	//err := yklog.InitGlobalConfig(rootPath, "debug", application.Name)
-	//if err != nil {
-	//	return fmt.Errorf("Yklog.InitGlobalConfig: %v", err)
-	//}
 
-	fmt.Println(rootPath)
+	err := applog.InitGlobalConfig(rootPath, "debug", application.Name)
+	if err != nil {
+		return fmt.Errorf("applog.InitGlobalConfig: %v", err)
+	}
+
+	kratos.Logger, err = helper.NewLogger()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
