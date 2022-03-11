@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	http_port  = flag.String("hp", "50000", "Set http server port.")
-	grpc_port  = flag.String("gp", "60000", "Set grpc server port.")
+	http_port  = flag.String("hp", "", "Set http server port.")
+	grpc_port  = flag.String("gp", "", "Set grpc server port.")
 	loggerPath = flag.String("logger_path", "", "Set Logger Root Path.")
 )
 
@@ -30,8 +30,12 @@ func NewRunner(app *kratos.Application) (*Runner, error) {
 
 	// 加载指定运行端口和日志路径
 	flag.Parse()
-	app.HTTPPort = *http_port
-	app.GRPCPort = *grpc_port
+	if *http_port != "" {
+		app.HTTPPort = *http_port
+	}
+	if *grpc_port != "" {
+		app.GRPCPort = *grpc_port
+	}
 	app.LoggerRootPath = *loggerPath
 
 	// 获取当前环境变量

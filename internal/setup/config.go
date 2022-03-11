@@ -13,6 +13,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"log"
+	"os"
 	"reflect"
 	"strconv"
 )
@@ -42,13 +43,18 @@ type Field struct {
 
 // NewConfiger 获取nacos的client
 func NewConfiger(app *kratos.Application) (*Configer, error) {
+	err := checkDirOrCreate(app.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	client, err := clients.NewConfigClient(vo.NacosClientParam{
 		ClientConfig: &constant.ClientConfig{
 			NamespaceId:         config.GetNacosNamespaceId(),
 			TimeoutMs:           NACOS_TIMEOU_MS,
 			NotLoadCacheAtStart: true,
-			LogDir:              NACOS_LOG_DIR,
-			CacheDir:            NACOS_CACHE_DIR,
+			LogDir:              NACOS_LOG_DIR + "/" + app.Name,
+			CacheDir:            NACOS_CACHE_DIR + "/" + app.Name,
 			LogLevel:            NACOS_LOG_LEVEL,
 		},
 		ServerConfigs: []constant.ServerConfig{
@@ -239,4 +245,27 @@ func (c *Configer) WatchUpdateConfig() {
 			return
 		}
 	}()
+}
+
+// checkDirOrCreate 检查文件夹是否存在，不存在则创建
+func checkDirOrCreate(serverName string) error {
+	dir := NACOS_LOG_DIR + "/" + serverName
+	exists := config.Exists(dir)
+	if !exists {
+		err := os.Mkdir(dir, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
+	dir = NACOS_CACHE_DIR + "/" + serverName
+	exists = config.Exists(dir)
+	if !exists {
+		err := os.Mkdir(dir, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -72,8 +72,8 @@ func (r *Runner) handleGRPC(grpcApp *kratos.GRPCApplication) error {
 			NamespaceId:         config.GetNacosNamespaceId(),
 			TimeoutMs:           setup.NACOS_TIMEOU_MS,
 			NotLoadCacheAtStart: true,
-			LogDir:              setup.NACOS_LOG_DIR,
-			CacheDir:            setup.NACOS_CACHE_DIR,
+			LogDir:              setup.NACOS_LOG_DIR + "/" + grpcApp.App.Name,
+			CacheDir:            setup.NACOS_CACHE_DIR + "/" + grpcApp.App.Name,
 			LogLevel:            setup.NACOS_LOG_LEVEL,
 		},
 		ServerConfigs: []constant.ServerConfig{
