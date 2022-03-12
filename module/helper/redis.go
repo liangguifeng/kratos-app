@@ -15,9 +15,9 @@ func NewRedisConn(redisSetting *setting.RedisSettingS) (*redisConn, error) {
 	if redisSetting.Host == "" {
 		return nil, fmt.Errorf("lack of redisSetting.Host")
 	}
-	if redisSetting.Password == "" {
-		return nil, fmt.Errorf("lack of redisSetting.Password")
-	}
+	//if redisSetting.Password == "" {
+	//	return nil, fmt.Errorf("lack of redisSetting.Password")
+	//}
 
 	maxIdle := 10
 	maxActive := 15

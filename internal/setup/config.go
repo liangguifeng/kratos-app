@@ -12,10 +12,12 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/pkg/errors"
 	"log"
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 var WatchConfigFields = make(map[string]*Field)
@@ -67,6 +69,23 @@ func NewConfiger(app *kratos.Application) (*Configer, error) {
 	return &Configer{client: client, currentNamespace: "public", DataId: app.Name}, nil
 }
 
+// CreateConfiger 创建配置
+func (c *Configer) CreateConfiger(allKey string) error {
+	ok, err := c.client.PublishConfig(vo.ConfigParam{
+		DataId:  c.DataId,
+		Group:   NACOS_DEFAULT_GROUP,
+		Content: allKey,
+	})
+	if err != nil {
+		return nil
+	}
+	if !ok {
+		return errors.New("config create fail")
+	}
+
+	return nil
+}
+
 // GetAllKeys 获取所有nacos配置key
 func (c *Configer) GetAllKeys() map[string]interface{} {
 	allKey, err := c.client.GetConfig(vo.ConfigParam{
@@ -75,6 +94,36 @@ func (c *Configer) GetAllKeys() map[string]interface{} {
 	})
 	if err != nil {
 		log.Panic(err)
+	}
+
+	// 如果获取到的key为空，可能是没有创建配置，此处创建默认配置
+	if len(allKey) == 0 {
+		allKey = `
+{
+  "Mysql.Host": "127.0.0.1",
+  "Mysql.UserName": "root",
+  "Mysql.Password": "root",
+  "Mysql.DBName": "kratos-layout",
+  "Mysql.Charset": "utf8mb4",
+  "Mysql.MaxIdle": "",
+  "Mysql.MaxOpen": "",
+  "Mysql.Loc": "",
+  "Mysql.MultiStatements": "",
+  "Mysql.ConnMaxLifeSecond": "",
+  "Mysql.ParseTime": "",
+  "Mysql.Timeout": "",
+  "Redis.Host": "127.0.0.1",
+  "Redis.Password": "",
+  "Redis.PoolNum": "",
+  "Redis.DB": "0",
+  "Redis.MaxIdle": ""
+}
+`
+		strings.Replace(allKey, "kratos-layout", c.DataId, -1)
+		err = c.CreateConfiger(allKey)
+		if err != nil {
+			log.Panic(err)
+		}
 	}
 
 	mapAllKey := make(map[string]interface{})
